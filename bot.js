@@ -22,33 +22,31 @@ client.on('message', msg => {
 function reactMyself(msg) {
   if (msg.content === SendToVault) {
     handleSendToVault(msg)
+    .then(() => msg.delete(60000))
   }
 }
 
 function handleSendToVault(msg) {
-  try {
-    msg.react('🥇')
-    .then(() => msg.react('🥈'))
-    .then(() => msg.react('🥉'))
-    .then(() => msg.react('❌'))
-    .then(() => msg.awaitReactions((reaction, user) => { return ['🥇','🥈','🥉','❌'].includes(reaction.emoji.name) && user.id !== msg.author.id }, { max: 1, time: 60000, errors: ['time'] })
-      .then(collected => {
-        const reaction = collected.first();
+  return msg.react('🥇')
+  .then(() => msg.react('🥈'))
+  .then(() => msg.react('🥉'))
+  .then(() => msg.react('❌'))
+  .then(() => msg.awaitReactions((reaction, user) => { return ['🥇','🥈','🥉','❌'].includes(reaction.emoji.name) && user.id !== msg.author.id }, { max: 1, time: 30000, errors: ['time'] })
+    .then(collected => {
+      const reaction = collected.first();
 
-        if (reaction.emoji.name === '🥇') {
-          msg.channel.send('Gold')
-        } else if (reaction.emoji.name === '🥈') {
-          msg.channel.send('Silver')
-        } else if (reaction.emoji.name === '🥉') {
-          msg.channel.send('Bronze')
-        } else {
-          msg.channel.send('Aborted')
-        }
-        msg.delete()
-      }))
-  } catch(e) {
-    console.error('Failed to consign to the vault: ' + e);
-  }
+      if (reaction.emoji.name === '🥇') {
+        msg.channel.send('Gold')
+      } else if (reaction.emoji.name === '🥈') {
+        msg.channel.send('Silver')
+      } else if (reaction.emoji.name === '🥉') {
+        msg.channel.send('Bronze')
+      } else {
+        msg.channel.send('Aborted')
+      }
+      msg.delete()
+    }))
+  .catch(e => console.error('Failed to consign to the vault: ' + e));
 }
 
 client.login(auth.token);

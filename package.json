@@ -1,0 +1,11 @@
+{
+  "name": "aurum-vault",
+  "version": "0.1.0",
+  "description": "A helper bot for Lich Server Congress to track undesirables",
+  "main": "bot.js",
+  "author": "Kazenone Alagar",
+  "dependencies": {
+    "discord.io": "^2.5.3",
+    "winston": "^3.2.1"
+  }
+}

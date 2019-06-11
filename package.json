@@ -5,6 +5,8 @@
   "main": "bot.js",
   "author": "Kazenone Alagar",
   "dependencies": {
-    "discord.js": "^11.5.1"
+    "better-sqlite3": "^5.4.0",
+    "discord.js": "^11.5.1",
+    "node-gyp": "^4.0.0"
   }
 }

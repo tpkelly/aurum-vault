@@ -1,15 +1,19 @@
 ﻿const Discord = require('discord.js');
-const client = new Discord.Client();
 const auth = require('./auth.json');
+const data = require('./data.js');
+
+const client = new Discord.Client();
 
 const SendToVault = 'Send this character to the Aurum Vault?'
+const GetFromVault = 'aurum, list all'
 
 client.on('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
+  data.setup();
+  console.log(`Logged in as ${client.user.tag}!`);
 });
 
 client.on('message', msg => {
-  if (msg.author.id == 587698308261085207) {
+  if (msg.author.id == client.user.id) {
     reactMyself(msg)
     return;
   }
@@ -17,13 +21,17 @@ client.on('message', msg => {
   if (msg.content.includes('/lodestone/character/')) {
     msg.channel.send(SendToVault)
   }
+  else if (msg.content.toLowerCase() === GetFromVault) {
+    data.get().forEach(m => msg.channel.send(m.name));
+  }
 });
 
 function reactMyself(msg) {
   if (msg.content === SendToVault) {
     handleSendToVault(msg)
-    .then(() => msg.delete(60000))
   }
+  
+  msg.delete(60000);
 }
 
 function handleSendToVault(msg) {
@@ -37,6 +45,7 @@ function handleSendToVault(msg) {
 
       if (reaction.emoji.name === '🥇') {
         msg.channel.send('Gold')
+        data.save({ name: 'Kazenone Alagar', lodestone: 123, severity: 'major'})
       } else if (reaction.emoji.name === '🥈') {
         msg.channel.send('Silver')
       } else if (reaction.emoji.name === '🥉') {

@@ -1,11 +1,12 @@
 ﻿const Discord = require('discord.js');
 const auth = require('./auth.json');
 const data = require('./data.js');
+const command = require('./command.js');
 
 const client = new Discord.Client();
 
-const SendToVault = 'Send this character to the Aurum Vault?'
-const GetFromVault = 'aurum, list all'
+const SendToVault = /Send this character \(#(\d+)\) to the Aurum Vault\?/
+const AurumPrefix = 'aurum,'
 
 client.on('ready', () => {
   data.setup();
@@ -18,16 +19,21 @@ client.on('message', msg => {
     return;
   }
   
-  if (msg.content.includes('/lodestone/character/')) {
-    msg.channel.send(SendToVault)
+  var content = msg.content.toLowerCase();
+  
+  if (content.includes('/lodestone/character/')) {
+    var match = content.match(/\/lodestone\/character\/(\d+)/)
+    let characterId = match[1]
+    msg.channel.send(`Send this character (#${characterId}) to the Aurum Vault?`)
   }
-  else if (msg.content.toLowerCase() === GetFromVault) {
-    data.get().forEach(m => msg.channel.send(m.name));
+  else if (content.startsWith(AurumPrefix)) {
+    var components = content.split(' ').slice(1);
+    handleCommands(msg, components);
   }
 });
 
 function reactMyself(msg) {
-  if (msg.content === SendToVault) {
+  if (msg.content.match(SendToVault)) {
     handleSendToVault(msg)
   }
   
@@ -43,19 +49,34 @@ function handleSendToVault(msg) {
     .then(collected => {
       const reaction = collected.first();
 
+      var matches = msg.content.match(SendToVault);
+      msg.delete()
+
+      var row;
       if (reaction.emoji.name === '🥇') {
-        msg.channel.send('Gold')
-        data.save({ name: 'Kazenone Alagar', lodestone: 123, severity: 'major'})
+        row = { lodestone: matches[1], severity: 'major'}
       } else if (reaction.emoji.name === '🥈') {
-        msg.channel.send('Silver')
+        row = { lodestone: matches[1], severity: 'moderate'}
       } else if (reaction.emoji.name === '🥉') {
-        msg.channel.send('Bronze')
+        row = { lodestone: matches[1], severity: 'minor'}
       } else {
         msg.channel.send('Aborted')
+        return;
       }
-      msg.delete()
-    }))
+      
+      msg.channel.send(`Alright, #${row.lodestone} has been found guilty of ${row.severity} crimes.`)
+      data.save(row);
+    })
+    .catch(e => console.error('Failed to consign to the vault: ' + e)))
   .catch(e => console.error('Failed to consign to the vault: ' + e));
+}
+
+function handleCommands(msg, commands) {
+  if (commands[0] === 'list') {
+    command.list(msg, commands.slice(1))
+  } else if (commands[0] === 'help') {
+    command.help(msg)
+  }
 }
 
 client.login(auth.token);

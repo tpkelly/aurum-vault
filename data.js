@@ -9,7 +9,6 @@ function setup() {
   if (!table['count(*)']) {
     const create = sql.prepare("CREATE TABLE vault( \
                   id TEXT PRIMARY KEY, \
-                  name TEXT, \
                   lodestone_id INTEGER, \
                   severity INTEGER, \
                   created DATETIME \
@@ -17,9 +16,9 @@ function setup() {
     create.run();
   }
   
-    sqlCommands.add = sql.prepare("INSERT OR REPLACE INTO vault (name, lodestone_id, severity, created) \
-                                   VALUES (@name, @lodestone, @severity, date('now'));");
-    sqlCommands.getAll = sql.prepare("SELECT name, lodestone_id, severity FROM vault ORDER BY created DESC;");
+    sqlCommands.add = sql.prepare("INSERT OR REPLACE INTO vault (lodestone_id, severity, created) \
+                                   VALUES (@lodestone, @severity, date('now'));");
+    sqlCommands.getAll = sql.prepare("SELECT lodestone_id, severity FROM vault ORDER BY created DESC;");
 }
 
 function save(data) {
@@ -27,7 +26,19 @@ function save(data) {
 }
 
 function get() {
-    return sqlCommands.getAll.all()
+    return sqlCommands.getAll.all().map(function(m) { return { lodestone: m.lodestone_id, severity: m.severity, name: nameFromLodestone(m.lodestone_id) }; });
+}
+
+function nameFromLodestone(lodestoneId) {
+  /* TODO
+  $.ajax({
+    url: ,
+    success: r => $(r).filter('title').text(),
+    error: r => "Unknown Player"
+  });
+  */
+
+  return "Unknown Player"
 }
 
 module.exports = {

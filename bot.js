@@ -37,12 +37,14 @@ client.on('message', msg => {
 function reactMyself(msg) {
   if (msg.content.match(SendToVault)) {
     handleSendToVault(msg)
+  } else {
+    msg.delete(30000)
   }
-  
-  msg.delete(60000)
 }
 
 function handleSendToVault(msg) {
+  var matches = msg.content.match(SendToVault);
+  
   return msg.react('🥇')
   .then(() => msg.react('🥈'))
   .then(() => msg.react('🥉'))
@@ -50,8 +52,6 @@ function handleSendToVault(msg) {
   .then(() => msg.awaitReactions((reaction, user) => { return ['🥇','🥈','🥉','❌'].includes(reaction.emoji.name) && user.id !== msg.author.id }, { max: 1, time: 30000, errors: ['time'] })
     .then(collected => {
       const reaction = collected.first();
-
-      var matches = msg.content.match(SendToVault);
       msg.delete()
 
       var row;
@@ -62,15 +62,19 @@ function handleSendToVault(msg) {
       } else if (reaction.emoji.name === '🥉') {
         row = { lodestone: matches[2], severity: 'minor'}
       } else {
-        msg.channel.send('Aborted')
+        msg.channel.send(`Alright ${matches[1]}, you're free to go.`)
         return;
       }
       
       msg.channel.send(`Alright, ${matches[1]} has been found guilty of ${row.severity} crimes.`)
       data.save(row);
     })
-    .catch(e => console.error('Failed to consign to the vault: ' + e)))
-  .catch(e => console.error('Failed to consign to the vault: ' + e));
+    .catch(() => {
+      // No responses within the time limit
+      msg.delete();
+      msg.channel.send(`Alright ${matches[1]}, you're free to go.`);
+    })
+  .catch(e => console.error('Failed to consign to the vault: ' + e)));
 }
 
 function handleCommands(msg, commands) {

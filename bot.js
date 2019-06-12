@@ -77,6 +77,9 @@ function handleCommands(msg, commands) {
   } else if (commands[0] === 'help') {
     command.help(msg)
   }
+  else if (commands[0] === 'cache') {
+    command.clear();
+  }
 }
 
 client.login(auth.discord);

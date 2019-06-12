@@ -1,7 +1,7 @@
 const data = require('./data.js');
 
 function list(msg, options) {
-  data.get().forEach(m => msg.channel.send(`${m.name} ${m.lodestone} ${m.severity}`));
+  data.get(function(m) { msg.channel.send(`${m.name} (#${m.lodestone}) ${m.severity}`)});
 }
 
 function help(msg) {

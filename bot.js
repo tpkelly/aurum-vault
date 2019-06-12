@@ -79,4 +79,4 @@ function handleCommands(msg, commands) {
   }
 }
 
-client.login(auth.token);
+client.login(auth.discord);

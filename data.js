@@ -1,5 +1,6 @@
 const SQLite = require("better-sqlite3");
 const sql = new SQLite('./vault.sqlite');
+const ajax = require('./ajax.js');
 
 var sqlCommands = {}
 
@@ -25,20 +26,25 @@ function save(data) {
     sqlCommands.add.run(data)
 }
 
-function get() {
-    return sqlCommands.getAll.all().map(function(m) { return { lodestone: m.lodestone_id, severity: m.severity, name: nameFromLodestone(m.lodestone_id) }; });
-}
+function get(callback) {
+  var allProfiles = sqlCommands.getAll.all();
+  var allLodestoneIds = allProfiles.map(function(p) { return p.lodestone_id })
 
-function nameFromLodestone(lodestoneId) {
-  /* TODO
-  $.ajax({
-    url: ,
-    success: r => $(r).filter('title').text(),
-    error: r => "Unknown Player"
+  var parsedIds = [];
+  allLodestoneIds.forEach(function(key) {
+    if (parsedIds.includes(key)) return;
+    parsedIds.push(key);
+    ajax.nameFromLodestone(key, function(data) {
+      var data = {
+        lodestone: key,
+        severity: allProfiles.filter(function(p) { return p.lodestone_id == key }).map(function(p) { return p.severity }).join(', '),
+        name: data.Character.Name,
+        server: data.Character.Server,
+        freecompany: data.FreeCompany.Name
+      }
+      callback(data);
+    });
   });
-  */
-
-  return "Unknown Player"
 }
 
 module.exports = {

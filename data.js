@@ -19,6 +19,7 @@ function setup() {
   }
   
   sqlCommands.vault.get = sql.prepare("SELECT lodestone_id, severity FROM vault ORDER BY created DESC;");
+  sqlCommands.vault.getSeverity = sql.prepare("SELECT lodestone_id, severity FROM vault WHERE severity = ?;");
   sqlCommands.vault.add = sql.prepare("INSERT OR REPLACE INTO vault (lodestone_id, severity, created) VALUES (@lodestone, @severity, date('now'));");
 
   sqlCommands.cache.all = sql.prepare("SELECT name, server, freecompany FROM lodestone_cache");
@@ -38,9 +39,16 @@ function clear() {
 
 function get(callback) {
   var allProfiles = sqlCommands.vault.get.all();
-  var allLodestoneIds = allProfiles.map(function(p) { return p.lodestone_id })
+  innerGet(allProfiles, callback);
+}
 
-  allProfiles.forEach(function(profile) {
+function getSeverity(severity, callback) {
+  var profiles = sqlCommands.vault.getSeverity.all(severity);
+  innerGet(profiles, callback)
+}
+
+function innerGet(profiles, callback) {
+    profiles.forEach(function(profile) {
     getNameFromLodestone(profile.lodestone_id, function(data) {
       var data = {
         lodestone: profile.lodestone_id,
@@ -81,6 +89,7 @@ module.exports = {
   setup: setup,
   save: save,
   get: get,
+  getSeverity: getSeverity,
   getId: getNameFromLodestone,
   clear: clear
 }

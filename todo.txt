@@ -1,7 +1,6 @@
 - Release people from the vault after time served
 - Scan for guilds they have joined
 - Generate monthly reports
-- Search by major/moderate/minor
 - Fill out help function
 - Purge cache frequently
 - Better reaction emojis

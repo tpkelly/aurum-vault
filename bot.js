@@ -5,7 +5,7 @@ const command = require('./command.js');
 
 const client = new Discord.Client();
 
-const SendToVault = /Send this character \(#(\d+)\) to the Aurum Vault\?/
+const SendToVault = /Send (.*) \(#(\d+)\) to the Aurum Vault\?/
 const AurumPrefix = 'aurum,'
 
 client.on('ready', () => {
@@ -24,7 +24,9 @@ client.on('message', msg => {
   if (content.includes('/lodestone/character/')) {
     var match = content.match(/\/lodestone\/character\/(\d+)/)
     let characterId = match[1]
-    msg.channel.send(`Send this character (#${characterId}) to the Aurum Vault?`)
+    data.getId(characterId, function(data) {
+      msg.channel.send(`Send ${data.name} (#${characterId}) to the Aurum Vault?`)
+    });
   }
   else if (content.startsWith(AurumPrefix)) {
     var components = content.split(' ').slice(1);
@@ -37,7 +39,7 @@ function reactMyself(msg) {
     handleSendToVault(msg)
   }
   
-  msg.delete(60000);
+  msg.delete(60000)
 }
 
 function handleSendToVault(msg) {
@@ -54,17 +56,17 @@ function handleSendToVault(msg) {
 
       var row;
       if (reaction.emoji.name === '🥇') {
-        row = { lodestone: matches[1], severity: 'major'}
+        row = { lodestone: matches[2], severity: 'major'}
       } else if (reaction.emoji.name === '🥈') {
-        row = { lodestone: matches[1], severity: 'moderate'}
+        row = { lodestone: matches[2], severity: 'moderate'}
       } else if (reaction.emoji.name === '🥉') {
-        row = { lodestone: matches[1], severity: 'minor'}
+        row = { lodestone: matches[2], severity: 'minor'}
       } else {
         msg.channel.send('Aborted')
         return;
       }
       
-      msg.channel.send(`Alright, #${row.lodestone} has been found guilty of ${row.severity} crimes.`)
+      msg.channel.send(`Alright, ${matches[1]} has been found guilty of ${row.severity} crimes.`)
       data.save(row);
     })
     .catch(e => console.error('Failed to consign to the vault: ' + e)))

@@ -40,14 +40,11 @@ function get(callback) {
   var allProfiles = sqlCommands.vault.get.all();
   var allLodestoneIds = allProfiles.map(function(p) { return p.lodestone_id })
 
-  var parsedIds = [];
-  allLodestoneIds.forEach(function(key) {
-    if (parsedIds.includes(key)) return;
-    parsedIds.push(key);
-    getNameFromLodestone(key, function(data) {
+  allProfiles.forEach(function(profile) {
+    getNameFromLodestone(profile.lodestone_id, function(data) {
       var data = {
-        lodestone: key,
-        severity: allProfiles.filter(function(p) { return p.lodestone_id == key }).map(function(p) { return p.severity }).join(', '),
+        lodestone: profile.lodestone_id,
+        severity: profile.severity,
         name: data.name,
         server: data.server,
         freecompany: data.freecompany
@@ -84,5 +81,6 @@ module.exports = {
   setup: setup,
   save: save,
   get: get,
+  getId: getNameFromLodestone,
   clear: clear
 }

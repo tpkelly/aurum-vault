@@ -12,29 +12,44 @@ function setup() {
   sqlCommands.cache.exists = sql.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name = 'lodestone_cache';")
 
   if (!sqlCommands.vault.exists.get()['count(*)']) {
-    sql.prepare("CREATE TABLE vault(id TEXT PRIMARY KEY, lodestone_id INTEGER, severity INTEGER, created DATETIME)").run();
+    sql.prepare("CREATE TABLE vault(id TEXT PRIMARY KEY, lodestone_id INTEGER, severity INTEGER, created DATETIME, releaseDate DATETIME)").run();
   }
   if (!sqlCommands.cache.exists.get()['count(*)']) {
     sql.prepare("CREATE TABLE lodestone_cache (lodestone_id INTEGER PRIMARY KEY, name TEXT, server TEXT, freecompany TEXT, expiry DATETIME)").run();
   }
   
-  sqlCommands.vault.get = sql.prepare("SELECT lodestone_id, severity FROM vault ORDER BY created DESC;");
-  sqlCommands.vault.getSeverity = sql.prepare("SELECT lodestone_id, severity FROM vault WHERE severity = ?;");
-  sqlCommands.vault.add = sql.prepare("INSERT OR REPLACE INTO vault (lodestone_id, severity, created) VALUES (@lodestone, @severity, date('now'));");
+  sqlCommands.vault.get = sql.prepare("SELECT lodestone_id, severity, releaseDate FROM vault ORDER BY created DESC;");
+  sqlCommands.vault.getSeverity = sql.prepare("SELECT lodestone_id, severity, releaseDate FROM vault WHERE severity = ?;");
+  sqlCommands.vault.add = sql.prepare("INSERT OR REPLACE INTO vault (lodestone_id, severity, created, releaseDate) VALUES (@lodestone, @severity, date('now'), date('now', @releaseDays));");
+  sqlCommands.vault.purge = sql.prepare("DELETE FROM vault WHERE releaseDate < date('now');");
 
   sqlCommands.cache.all = sql.prepare("SELECT name, server, freecompany FROM lodestone_cache");
   sqlCommands.cache.get = sql.prepare("SELECT name, server, freecompany FROM lodestone_cache WHERE lodestone_id = ?;");
-  sqlCommands.cache.add = sql.prepare("INSERT INTO lodestone_cache (lodestone_id, name, server, freecompany, expiry) VALUES (?, ?, ?, ?, date('now', '+1 day'));");
+  sqlCommands.cache.add = sql.prepare("INSERT INTO lodestone_cache (lodestone_id, name, server, freecompany, expiry) VALUES (@lodestone, @name, @server, @freecompany, date('now', '+1 day'));");
   sqlCommands.cache.clear = sql.prepare("DELETE FROM lodestone_cache;");
+  sqlCommands.cache.purge = sql.prepare("DELETE FROM lodestone_cache WHERE expiry < date('now');");
 }
 
 function save(data) {
-    sqlCommands.vault.add.run(data)
+  if (data.severity == 'major') {
+    data.releaseDays = '+36500 days'
+  } else if (data.severity == 'moderate') {
+    data.releaseDays = '+365 days'
+  } else if (data.severity == 'minor') {
+    data.releaseDays = '+180 days'
+  }
+  
+  sqlCommands.vault.add.run(data)
 }
 
 function clear() {
   console.log('Cache cleared')
   sqlCommands.cache.clear.run()
+}
+
+function purge() {
+  sqlCommands.cache.purge.run()
+  sqlCommands.vault.purge.run()
 }
 
 function get(callback) {
@@ -55,7 +70,8 @@ function innerGet(profiles, callback) {
         severity: profile.severity,
         name: data.name,
         server: data.server,
-        freecompany: data.freecompany
+        freecompany: data.freecompany,
+        release: profile.releaseDate
       }
       callback(data);
     });
@@ -67,6 +83,7 @@ function getNameFromLodestone(key, callback) {
   if (!results.length) {
     ajax.nameFromLodestone(key, function(data) {
       results = {
+        lodestone: key,
         name: data.Character.Name,
         server: data.Character.Server,
       };
@@ -75,7 +92,7 @@ function getNameFromLodestone(key, callback) {
         results.freecompany = data.FreeCompany.Name
       }
 
-      sqlCommands.cache.add.run(key, results.name, results.server, results.freecompany);
+      sqlCommands.cache.add.run(results);
       callback(results);
     });
   }
@@ -91,5 +108,11 @@ module.exports = {
   get: get,
   getSeverity: getSeverity,
   getId: getNameFromLodestone,
+  purge: purge,
   clear: clear
 }
+
+Date.prototype.addDays = function(days) {
+    this.setDate(this.getDate() + parseInt(days));
+    return this;
+};

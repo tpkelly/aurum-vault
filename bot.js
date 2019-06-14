@@ -2,6 +2,7 @@
 const auth = require('./auth.json');
 const data = require('./data.js');
 const command = require('./command.js');
+const cron = require('./cron.js');
 
 const client = new Discord.Client();
 
@@ -10,6 +11,7 @@ const AurumPrefix = 'aurum,'
 
 client.on('ready', () => {
   data.setup();
+  cron.scheduleRun();
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
@@ -31,6 +33,8 @@ client.on('message', msg => {
   else if (content.startsWith(AurumPrefix)) {
     var components = content.split(' ').slice(1);
     handleCommands(msg, components);
+  } else if (content === 'help') {
+    command.help(msg)
   }
 });
 
@@ -52,7 +56,6 @@ function handleSendToVault(msg) {
   .then(() => msg.awaitReactions((reaction, user) => { return ['🥇','🥈','🥉','❌'].includes(reaction.emoji.name) && user.id !== msg.author.id }, { max: 1, time: 30000, errors: ['time'] })
     .then(collected => {
       const reaction = collected.first();
-      msg.delete()
 
       var row;
       if (reaction.emoji.name === '🥇') {
@@ -67,12 +70,13 @@ function handleSendToVault(msg) {
       }
       
       msg.channel.send(`Alright, ${matches[1]} has been found guilty of ${row.severity} crimes.`)
+      msg.delete()
       data.save(row);
     })
-    .catch(() => {
+    .catch(e => {
       // No responses within the time limit
       msg.delete();
-      msg.channel.send(`Alright ${matches[1]}, you're free to go.`);
+      msg.channel.send(`Alright ${matches[1]}, you're free to go. ${e}`);
     })
   .catch(e => console.error('Failed to consign to the vault: ' + e)));
 }

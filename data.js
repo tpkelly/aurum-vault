@@ -2,15 +2,25 @@ const SQLite = require("better-sqlite3");
 const sql = new SQLite('./vault.sqlite');
 const ajax = require('./ajax.js');
 
+var migrations = [
+  "ALTER TABLE vault ADD COLUMN Reason TEXT;"
+]
+
 var sqlCommands = {
   vault: {},
-  cache: {}
+  cache: {},
+  version: {}
 }
 
 function setup() {
   sqlCommands.vault.exists = sql.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name = 'vault';")
   sqlCommands.cache.exists = sql.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name = 'lodestone_cache';")
+  sqlCommands.version.exists = sql.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name = 'version';")
 
+  if (!sqlCommands.version.exists.get()['count(*)']) {
+    sql.prepare("CREATE TABLE version(version INTEGER)").run();
+    sql.prepare("INSERT INTO version (version) VALUES (0)").run();
+  }
   if (!sqlCommands.vault.exists.get()['count(*)']) {
     sql.prepare("CREATE TABLE vault(id TEXT PRIMARY KEY, lodestone_id INTEGER, severity INTEGER, created DATETIME, releaseDate DATETIME)").run();
   }
@@ -18,9 +28,16 @@ function setup() {
     sql.prepare("CREATE TABLE lodestone_cache (lodestone_id INTEGER PRIMARY KEY, name TEXT, server TEXT, freecompany TEXT, expiry DATETIME)").run();
   }
   
+  // Apply migrations
+  var current = sql.prepare("SELECT version FROM version").get().version;
+  for (var i = current.version; i < migrations.length; i++) {
+    sql.prepare(migrations[i]).run();
+    sql.prepare(`UPDATE version SET version = ${i+1}`);
+  }
+  
   sqlCommands.vault.get = sql.prepare("SELECT lodestone_id, severity, releaseDate FROM vault ORDER BY created DESC;");
   sqlCommands.vault.getSeverity = sql.prepare("SELECT lodestone_id, severity, releaseDate FROM vault WHERE severity = ?;");
-  sqlCommands.vault.add = sql.prepare("INSERT OR REPLACE INTO vault (lodestone_id, severity, created, releaseDate) VALUES (@lodestone, @severity, date('now'), date('now', @releaseDays));");
+  sqlCommands.vault.add = sql.prepare("INSERT OR REPLACE INTO vault (lodestone_id, severity, reason, created, releaseDate) VALUES (@lodestone, @severity, @reason, date('now'), date('now', @releaseDays));");
   sqlCommands.vault.purge = sql.prepare("DELETE FROM vault WHERE releaseDate < date('now');");
 
   sqlCommands.cache.all = sql.prepare("SELECT name, server, freecompany FROM lodestone_cache");

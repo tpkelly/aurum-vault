@@ -54,6 +54,8 @@ function save(data) {
     data.releaseDays = '+365 days'
   } else if (data.severity == 'minor') {
     data.releaseDays = '+180 days'
+  } else {
+    data.releaseDays = '+14 days';
   }
   
   sqlCommands.vault.add.run(data)

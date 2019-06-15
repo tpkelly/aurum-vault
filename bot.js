@@ -42,7 +42,7 @@ client.on('message', msg => {
 function reactMyself(msg) {
   if (msg.content.match(SendToVault)) {
     handleSendToVault(msg)
-  } else {
+  } else if (msg.channel.type === 'text') {
     msg.delete(30000)
   }
 }
@@ -78,7 +78,7 @@ function handleSendToVault(msg) {
       } else if (reaction.emoji.name === msgConst.hostileTakeoverReaction) {
         row = { severity: 'moderate', reason: 'hostile takeover of a guild' }
       } else if (reaction.emoji.name === msgConst.otherReasonReaction) {
-        row = { severity: 'minor', reason: '' }
+        row = { severity: 'review', reason: '' }
         var alertUser = client.users.get(msgConst.alertUserId);
         alertUser.createDM().then(c => c.send(`${matches[1]} needs to be reviewed and processed.`));
       } else {
@@ -91,7 +91,7 @@ function handleSendToVault(msg) {
       if (row.reason) {
         msg.channel.send(`Alright, ${matches[1]} has been found guilty of ${row.reason}.`);
       } else {
-        msg.channel.send(`Alright, ${matches[1]} has been found guilty.`);
+        msg.channel.send(`Alright, ${matches[1]} has been flagged for review by an Admin.`);
       }
       msg.delete()
       data.save(row);

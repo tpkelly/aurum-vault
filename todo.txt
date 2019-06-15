@@ -3,3 +3,5 @@
 - Better reaction emojis
 - Admins/Moderators amending and updating sentences
 - Fill out help function
+- "Report a bug" command
+- Add reason for incarceration

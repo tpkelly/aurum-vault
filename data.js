@@ -3,7 +3,7 @@ const sql = new SQLite('./vault.sqlite');
 const ajax = require('./ajax.js');
 
 var migrations = [
-  "ALTER TABLE vault ADD COLUMN Reason TEXT;"
+  "ALTER TABLE vault ADD COLUMN reason TEXT;"
 ]
 
 var sqlCommands = {
@@ -29,14 +29,15 @@ function setup() {
   }
   
   // Apply migrations
-  var current = sql.prepare("SELECT version FROM version").get().version;
+  var current = sql.prepare("SELECT version FROM version").get();
   for (var i = current.version; i < migrations.length; i++) {
+    console.log(`Migrating v${i}->v${i+1}`)
     sql.prepare(migrations[i]).run();
-    sql.prepare(`UPDATE version SET version = ${i+1}`);
+    sql.prepare(`UPDATE version SET version = ${i+1}`).run();
   }
   
-  sqlCommands.vault.get = sql.prepare("SELECT lodestone_id, severity, releaseDate FROM vault ORDER BY created DESC;");
-  sqlCommands.vault.getSeverity = sql.prepare("SELECT lodestone_id, severity, releaseDate FROM vault WHERE severity = ?;");
+  sqlCommands.vault.get = sql.prepare("SELECT lodestone_id, severity, reason, releaseDate FROM vault ORDER BY created DESC;");
+  sqlCommands.vault.getSeverity = sql.prepare("SELECT lodestone_id, severity, reason, releaseDate FROM vault WHERE severity = ?;");
   sqlCommands.vault.add = sql.prepare("INSERT OR REPLACE INTO vault (lodestone_id, severity, reason, created, releaseDate) VALUES (@lodestone, @severity, @reason, date('now'), date('now', @releaseDays));");
   sqlCommands.vault.purge = sql.prepare("DELETE FROM vault WHERE releaseDate < date('now');");
 
@@ -84,15 +85,17 @@ function getSeverity(severity, callback) {
 function innerGet(profiles, callback) {
     profiles.forEach(function(profile) {
     getNameFromLodestone(profile.lodestone_id, function(data) {
-      var data = {
+      var result = {
         lodestone: profile.lodestone_id,
         severity: profile.severity,
         name: data.name,
         server: data.server,
         freecompany: data.freecompany,
-        release: profile.releaseDate
+        release: profile.releaseDate,
+        reason: profile.reason
       }
-      callback(data);
+      console.log(profile);
+      callback(result);
     });
   });
 }

@@ -28,7 +28,13 @@ client.on('message', msg => {
     var match = content.match(/\/lodestone\/character\/(\d+)/)
     let characterId = match[1]
     data.getId(characterId, function(data) {
-      msg.channel.send(`Send ${data.name} (#${characterId}) to the Aurum Vault?`)
+      msg.channel.send(`Send ${data.name} (#${characterId}) to the Aurum Vault?
+  ${msgConst.gilReaction}: They stole from the company chest
+  ${msgConst.ingameHarassmentReaction}: They repeatedly harassed people in-game
+  ${msgConst.hostileTakeoverReaction}: They attempted to take over the guild or destroy the guildhall.
+  ${msgConst.extremeHarassmentReaction}: They led a long period of harassment both in-game and out-of-game.
+  ${msgConst.otherReasonReaction}: They offended in another way. This will be reviewed by an Admin or Moderator.
+  ${msgConst.cancelReaction}: A mistake has been made, this is no criminal!`)
     });
   }
   else if (content.startsWith(AurumPrefix)) {
@@ -69,6 +75,8 @@ function handleSendToVault(msg) {
       const reaction = collected.first();
 
       var row;
+      msg.delete()
+
       if (reaction.emoji.name === msgConst.gilReaction) {
         row = { severity: 'minor', reason: 'stealing from the FC bank' }
       } else if (reaction.emoji.name === msgConst.ingameHarassmentReaction) {
@@ -93,7 +101,6 @@ function handleSendToVault(msg) {
       } else {
         msg.channel.send(`Alright, ${matches[1]} has been flagged for review by an Admin.`);
       }
-      msg.delete()
       data.save(row);
     })
     .catch(e => {

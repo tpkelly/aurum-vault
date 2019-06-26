@@ -116,6 +116,8 @@ function handleCommands(msg, commands) {
     command.list(msg, commands.slice(1))
   } else if (commands[0] === 'help') {
     command.help(msg)
+  } else if (commands[0] === 'release') {
+    command.release(msg, commands.slice(1));
   }
   else if (commands[0] === 'cache') {
     command.clear();

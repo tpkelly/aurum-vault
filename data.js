@@ -40,9 +40,11 @@ function setup() {
   sqlCommands.vault.getSeverity = sql.prepare("SELECT lodestone_id, severity, reason, releaseDate FROM vault WHERE severity = ?;");
   sqlCommands.vault.add = sql.prepare("INSERT OR REPLACE INTO vault (lodestone_id, severity, reason, created, releaseDate) VALUES (@lodestone, @severity, @reason, date('now'), date('now', @releaseDays));");
   sqlCommands.vault.purge = sql.prepare("DELETE FROM vault WHERE releaseDate < date('now');");
+  sqlCommands.vault.remove = sql.prepare("DELETE FROM vault WHERE lodestone_id = ?");
 
   sqlCommands.cache.all = sql.prepare("SELECT name, server, freecompany FROM lodestone_cache");
   sqlCommands.cache.get = sql.prepare("SELECT name, server, freecompany FROM lodestone_cache WHERE lodestone_id = ?;");
+  sqlCommands.cache.getName = sql.prepare("SELECT lodestone_id FROM lodestone_cache WHERE name LIKE ? || '% ' || ? ||'%';");
   sqlCommands.cache.add = sql.prepare("INSERT INTO lodestone_cache (lodestone_id, name, server, freecompany, expiry) VALUES (@lodestone, @name, @server, @freecompany, date('now', '+1 day'));");
   sqlCommands.cache.clear = sql.prepare("DELETE FROM lodestone_cache;");
   sqlCommands.cache.purge = sql.prepare("DELETE FROM lodestone_cache WHERE expiry < date('now');");
@@ -83,7 +85,10 @@ function getSeverity(severity, callback) {
 }
 
 function innerGet(profiles, callback) {
-    profiles.forEach(function(profile) {
+  if (profiles.length === 0) {
+    callback('No entries in the Vault.')
+  }
+  profiles.forEach(function(profile) {
     getNameFromLodestone(profile.lodestone_id, function(data) {
       var result = {
         lodestone: profile.lodestone_id,
@@ -94,8 +99,8 @@ function innerGet(profiles, callback) {
         release: profile.releaseDate,
         reason: profile.reason
       }
-      console.log(profile);
-      callback(result);
+
+      callback(null, result);
     });
   });
 }
@@ -124,6 +129,23 @@ function getNameFromLodestone(key, callback) {
   }
 }
 
+function remove(forename, surname, callback) {
+  // TODO: Properly repopulate cache
+  var results = sqlCommands.cache.getName.all(forename, surname);
+  if (results.length) {
+    var removed = sqlCommands.vault.remove.run(results[0].lodestone_id)
+    if (!removed.changes) {
+      callback('No results found');
+    }
+    else {
+      callback();
+    }
+  }
+  else {
+    callback('No results found');
+  }
+}
+
 module.exports = {
   setup: setup,
   save: save,
@@ -131,7 +153,8 @@ module.exports = {
   getSeverity: getSeverity,
   getId: getNameFromLodestone,
   purge: purge,
-  clear: clear
+  clear: clear,
+  remove: remove
 }
 
 Date.prototype.addDays = function(days) {

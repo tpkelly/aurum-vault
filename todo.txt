@@ -1,6 +1,6 @@
 - Scan for guilds they have joined
 - Generate monthly reports
-- Better reaction emojis
 - Admins/Moderators amending and updating sentences
-- Fill out help function
 - "Report a bug" command
+- Event log
+- Incarcerated by who?

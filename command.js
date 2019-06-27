@@ -1,4 +1,5 @@
 const data = require('./data.js');
+const msgConst = require('./messageConst.js');
 
 function list(msg, options) {
   var listCommand = function(err, m) { 
@@ -42,14 +43,18 @@ function help(msg) {
   \nI am the guard stationed to oversee these criminals. \
   \nYou can talk to me with "Aurum, <command>". \
   \n\
-  \n== Commands == \
+  \n=== Commands === \
   \n**help**\
   \nDisplay this help message. \
-  \n\n**list** *[all|major|moderate|minor]* \
-  \nList all criminals serving time in the Vault, with an optional filter on the severity of their crimes.';
+  \n\n**list** [all|major|moderate|minor] \
+  \nList all criminals serving time in the Vault, with an optional filter on the severity of their crimes. \
+  \n\n**report** <bug report> \
+  \nReport a bug with the bot to the creator. \
+  ';
   
   if (hasAdmin(msg)) {
-    response += '\n\n**release** [character name] \
+    response += '\n\n=== Admin Commands === \
+    \n**release** <character name> \
     \nSet this character free from the Vault. \
     ';
   }
@@ -58,6 +63,11 @@ function help(msg) {
 
 function clear() {
   data.clear();
+}
+
+function report(client, msg, report) {
+  var alertUser = client.users.get(msgConst.alertUserId);
+  alertUser.createDM().then(c => c.send(`Bug report (${msg.author.tag}): ${report}`));
 }
 
 function hasAdmin(msg) {
@@ -73,5 +83,6 @@ module.exports = {
   list: list,
   help: help,
   clear : clear,
-  release: release
+  release: release,
+  report: report
 }

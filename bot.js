@@ -38,8 +38,7 @@ client.on('message', msg => {
     });
   }
   else if (content.startsWith(AurumPrefix)) {
-    var components = content.split(' ').slice(1);
-    handleCommands(msg, components);
+    handleCommands(msg, content);
   } else if (content === 'help') {
     command.help(msg)
   }
@@ -111,16 +110,18 @@ function handleSendToVault(msg) {
   .catch(e => console.error('Failed to consign to the vault: ' + e)));
 }
 
-function handleCommands(msg, commands) {
+function handleCommands(msg, content) {
+  var commands = content.split(' ').slice(1);
   if (commands[0] === 'list') {
     command.list(msg, commands.slice(1))
   } else if (commands[0] === 'help') {
     command.help(msg)
   } else if (commands[0] === 'release') {
     command.release(msg, commands.slice(1));
-  }
-  else if (commands[0] === 'cache') {
+  } else if (commands[0] === 'cache') {
     command.clear();
+  } else if (commands[0] === 'report') {
+    command.report(client, msg, content.replace('aurum, report', ''));
   }
 }
 

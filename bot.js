@@ -63,13 +63,7 @@ function handleSendToVault(msg) {
     msgConst.cancelReaction
   ];
   
-  return msg.react(msgConst.gilReaction)
-  .then(() => msg.react(msgConst.ingameHarassmentReaction))
-  .then(() => msg.react(msgConst.extremeHarassmentReaction))
-  .then(() => msg.react(msgConst.hostileTakeoverReaction))
-  .then(() => msg.react(msgConst.otherReasonReaction))
-  .then(() => msg.react(msgConst.cancelReaction))
-  .then(() => msg.awaitReactions((reaction, user) => { return allReactions.includes(reaction.emoji.name) && user.id !== msg.author.id }, { max: 1, time: 30000, errors: ['time'] })
+  msg.awaitReactions((reaction, user) => { return allReactions.includes(reaction.emoji.name) && user.id !== msg.author.id }, { max: 1, time: 30000, errors: ['time'] })
     .then(collected => {
       const reaction = collected.first();
 
@@ -106,8 +100,15 @@ function handleSendToVault(msg) {
       // No responses within the time limit
       msg.delete();
       msg.channel.send(`Alright ${matches[1]}, you're free to go.`);
-    })
-  .catch(e => console.error('Failed to consign to the vault: ' + e)));
+    });
+  
+  msg.react(msgConst.gilReaction)
+    .then(() => msg.react(msgConst.ingameHarassmentReaction))
+    .then(() => msg.react(msgConst.extremeHarassmentReaction))
+    .then(() => msg.react(msgConst.hostileTakeoverReaction))
+    .then(() => msg.react(msgConst.otherReasonReaction))
+    .then(() => msg.react(msgConst.cancelReaction))
+    .catch(e => console.error('Failed to consign to the vault: ' + e));
 }
 
 function handleCommands(msg, content) {

@@ -22,7 +22,7 @@ function setup() {
     sql.prepare("INSERT INTO version (version) VALUES (0)").run();
   }
   if (!sqlCommands.vault.exists.get()['count(*)']) {
-    sql.prepare("CREATE TABLE vault(id TEXT PRIMARY KEY, lodestone_id INTEGER, severity INTEGER, created DATETIME, releaseDate DATETIME)").run();
+    sql.prepare("CREATE TABLE vault(id INTEGER PRIMARY KEY, lodestone_id INTEGER, severity INTEGER, created DATETIME, releaseDate DATETIME)").run();
   }
   if (!sqlCommands.cache.exists.get()['count(*)']) {
     sql.prepare("CREATE TABLE lodestone_cache (lodestone_id INTEGER PRIMARY KEY, name TEXT, server TEXT, freecompany TEXT, expiry DATETIME)").run();
@@ -36,9 +36,11 @@ function setup() {
     sql.prepare(`UPDATE version SET version = ${i+1}`).run();
   }
   
-  sqlCommands.vault.get = sql.prepare("SELECT lodestone_id, severity, reason, releaseDate FROM vault ORDER BY created DESC;");
+  sqlCommands.vault.get = sql.prepare("SELECT lodestone_id, id, severity, reason, releaseDate FROM vault ORDER BY created DESC;");
   sqlCommands.vault.getSeverity = sql.prepare("SELECT lodestone_id, severity, reason, releaseDate FROM vault WHERE severity = ?;");
+  sqlCommands.vault.getName = sql.prepare("select reason, severity, releaseDate, id FROM VAULT WHERE lodestone_id = ?");
   sqlCommands.vault.add = sql.prepare("INSERT OR REPLACE INTO vault (lodestone_id, severity, reason, created, releaseDate) VALUES (@lodestone, @severity, @reason, date('now'), date('now', @releaseDays));");
+  sqlCommands.vault.update = sql.prepare("UPDATE vault SET releaseDate = @date WHERE id = @id")
   sqlCommands.vault.purge = sql.prepare("DELETE FROM vault WHERE releaseDate < date('now');");
   sqlCommands.vault.remove = sql.prepare("DELETE FROM vault WHERE lodestone_id = ?");
 
@@ -84,6 +86,22 @@ function getSeverity(severity, callback) {
   innerGet(profiles, callback)
 }
 
+function getName(nameComponents, callback) {
+  getIdFromVault(nameComponents, function(err, id) {
+    if (err) {
+      callback(err);
+    }
+    
+    var results = sqlCommands.vault.getName.all(id)
+    if (!results.length) {
+      callback('No results found');
+    }
+    else {
+      callback(null, results);
+    }
+  });
+}
+
 function innerGet(profiles, callback) {
   if (profiles.length === 0) {
     callback('No entries in the Vault.')
@@ -91,6 +109,7 @@ function innerGet(profiles, callback) {
   profiles.forEach(function(profile) {
     getNameFromLodestone(profile.lodestone_id, function(data) {
       var result = {
+        id: profile.id,
         lodestone: profile.lodestone_id,
         severity: profile.severity,
         name: data.name,
@@ -129,20 +148,38 @@ function getNameFromLodestone(key, callback) {
   }
 }
 
-function remove(forename, surname, callback) {
+function getIdFromVault(nameComponents, callback) {
   // TODO: Properly repopulate cache
-  var results = sqlCommands.cache.getName.all(forename, surname);
-  if (results.length) {
-    var removed = sqlCommands.vault.remove.run(results[0].lodestone_id)
+  var results = sqlCommands.cache.getName.all(nameComponents[0], nameComponents[1]);
+  if (!results.length) {
+    callback('No results found');
+  }
+  
+  callback(null, results[0].lodestone_id);
+}
+
+function remove(nameComponents, callback) {
+  getIdFromVault(nameComponents, function(err, id) {
+    if (err) {
+      callback(err);
+    }
+    
+    var removed = sqlCommands.vault.remove.run(id)
     if (!removed.changes) {
       callback('No results found');
     }
     else {
       callback();
     }
-  }
-  else {
-    callback('No results found');
+  });
+}
+
+function update(id, date, callback) {
+  var updated = sqlCommands.vault.update.run({ date: date, id: id });
+  if (!updated.changes) {
+    callback('Nothing updated')
+  } else {
+    callback();
   }
 }
 
@@ -151,10 +188,12 @@ module.exports = {
   save: save,
   get: get,
   getSeverity: getSeverity,
+  getName: getName,
   getId: getNameFromLodestone,
   purge: purge,
   clear: clear,
-  remove: remove
+  remove: remove,
+  update: update
 }
 
 Date.prototype.addDays = function(days) {

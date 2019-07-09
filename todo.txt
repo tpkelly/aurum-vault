@@ -1,6 +1,5 @@
 - Scan for guilds they have joined
 - Generate monthly reports
-- Admins/Moderators amending and updating sentences
 - Event log
 - Incarcerated by who?
 - Blacklisting users

@@ -119,6 +119,8 @@ function handleCommands(msg, content) {
     command.help(msg)
   } else if (commands[0] === 'release') {
     command.release(msg, commands.slice(1));
+  } else if (commands[0] === 'update') {
+    command.update(msg, commands.slice(1));
   } else if (commands[0] === 'cache') {
     command.clear();
   } else if (commands[0] === 'report') {

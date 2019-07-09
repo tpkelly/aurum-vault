@@ -6,6 +6,10 @@ function list(msg, options) {
     if (err) {
       msg.author.createDM().then(c => c.send(err));
     }
+    else if (hasAdmin(msg)) {
+      console.log(m);
+      msg.author.createDM().then(c => c.send(`**${m.name}** (${m.severity}) until ${formatDateOut(m.release)}: ${m.reason}`))
+    }
     else {
       msg.author.createDM().then(c => c.send(`**${m.name}** (${m.severity}): ${m.reason}`))
     }
@@ -15,6 +19,35 @@ function list(msg, options) {
   } else {
     data.getSeverity(options[0], listCommand);
   }
+}
+
+function update(msg, options) {
+  if (!hasAdmin(msg)) {
+    msg.channel.send('That\'s far enough citizen. Only Admins and Moderators may change the books on these criminals.')
+    return;
+  }
+  
+  if (options.length !== 3) {
+    msg.channel.send('I\'m not sure what you mean. I was expecting to hear "Aurum, update [forename] [surname] [dd-mm-yyyy]".')
+    return;
+  }
+
+  // Which crime, if multiple
+  data.getName(`${options[0]} ${options[1]}`, function(err, results) {
+    if (err) {
+      msg.channel.send(`"${options[0]} ${options[1]}"? This vagrant is not one of ours`);
+    }
+    
+    if (results.length == 1) {
+      data.update(results[0].id, formatDateIn(options[2]), function() {
+        msg.channel.send(`Very well. The retrial of ${options[0]} ${options[1]} is over.`);
+      });
+    }
+    else { 
+      console.log('many');
+      console.log(results);
+    }
+  });
 }
 
 function release(msg, options) {
@@ -28,7 +61,7 @@ function release(msg, options) {
     return;
   }
   
-  data.remove(options[0], options[1], function(err) {
+  data.remove(options, function(err) {
     if (err) {
       msg.channel.send(`"${options[0]} ${options[1]}"? This vagrant is not one of ours`);
     }
@@ -56,6 +89,8 @@ function help(msg) {
     response += '\n\n=== Admin Commands === \
     \n**release** <character name> \
     \nSet this character free from the Vault. \
+    \n\n**update** <character name> <dd-mm-yyyy> \
+    \nModify the date of release for this character. \
     ';
   }
   msg.author.createDM().then(c => c.send(response));
@@ -79,10 +114,22 @@ function hasAdmin(msg) {
   return role.name === 'Admin' || role.name === 'Moderator'
 }
 
+function formatDateOut(dateStr) {
+  var results = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/)
+  return `${results[3]}-${results[2]}-${results[1]}`;
+}
+
+function formatDateIn(dateStr) {
+  var results = dateStr.match(/(\d{2})-(\d{2})-(\d{4})/)
+  return `${results[3]}-${results[2]}-${results[1]}`;
+}
+
+
 module.exports = {
   list: list,
   help: help,
   clear : clear,
   release: release,
+  update: update,
   report: report
 }

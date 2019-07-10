@@ -12,7 +12,7 @@ const AurumPrefix = 'aurum,'
 
 client.on('ready', () => {
   data.setup();
-  cron.scheduleRun();
+  cron.run();
   console.log(`Logged in as ${client.user.tag}!`);
 });
 

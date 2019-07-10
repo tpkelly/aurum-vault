@@ -7,8 +7,7 @@ function list(msg, options) {
       msg.author.createDM().then(c => c.send(err));
     }
     else if (hasAdmin(msg)) {
-      console.log(m);
-      msg.author.createDM().then(c => c.send(`**${m.name}** (${m.severity}) until ${formatDateOut(m.release)}: ${m.reason}`))
+      msg.author.createDM().then(c => c.send(`${m.id}: **${m.name}** (${m.severity}) until ${formatDateOut(m.release)}: ${m.reason}`))
     }
     else {
       msg.author.createDM().then(c => c.send(`**${m.name}** (${m.severity}): ${m.reason}`))
@@ -27,7 +26,7 @@ function update(msg, options) {
     return;
   }
   
-  if (options.length !== 3) {
+  if (options.length < 3 || options.length > 4) {
     msg.channel.send('I\'m not sure what you mean. I was expecting to hear "Aurum, update [forename] [surname] [dd-mm-yyyy]".')
     return;
   }
@@ -38,15 +37,19 @@ function update(msg, options) {
       msg.channel.send(`"${options[0]} ${options[1]}"? This vagrant is not one of ours`);
     }
     
+    var crimeId;
     if (results.length == 1) {
-      data.update(results[0].id, formatDateIn(options[2]), function() {
-        msg.channel.send(`Very well. The retrial of ${options[0]} ${options[1]} is over.`);
-      });
+      crimeId = 0
+    } else if (options.length === 3) {
+      msg.channel.send(`${options[0]} ${options[1]} has multiple charges against them.\n Please supply the Crime ID as "Aurum, update [forename] [surname] [dd-mm-yyyy] [crimeId]"`);
+      return;
+    } else {
+      crimeId = options[3] - 1;
     }
-    else { 
-      console.log('many');
-      console.log(results);
-    }
+    
+    data.update(results[crimeId].id, formatDateIn(options[2]), function() {
+      msg.channel.send(`Very well. The retrial of ${options[0]} ${options[1]} is over.`);
+    });
   });
 }
 

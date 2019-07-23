@@ -90,6 +90,7 @@ function getName(nameComponents, callback) {
   getIdFromVault(nameComponents, function(err, id) {
     if (err) {
       callback(err);
+      return;
     }
     
     var results = sqlCommands.vault.getName.all(id)
@@ -105,6 +106,7 @@ function getName(nameComponents, callback) {
 function innerGet(profiles, callback) {
   if (profiles.length === 0) {
     callback('No entries in the Vault.')
+    return;
   }
   profiles.forEach(function(profile) {
     getNameFromLodestone(profile.lodestone_id, function(data) {
@@ -153,6 +155,7 @@ function getIdFromVault(nameComponents, callback) {
   var results = sqlCommands.cache.getName.all(nameComponents[0], nameComponents[1]);
   if (!results.length) {
     callback('No results found');
+    return;
   }
   
   callback(null, results[0].lodestone_id);
@@ -162,6 +165,7 @@ function remove(nameComponents, callback) {
   getIdFromVault(nameComponents, function(err, id) {
     if (err) {
       callback(err);
+      return;
     }
     
     var removed = sqlCommands.vault.remove.run(id)

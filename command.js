@@ -7,7 +7,7 @@ function list(msg, options) {
       msg.author.createDM().then(c => c.send(err));
     }
     else if (hasAdmin(msg)) {
-      msg.author.createDM().then(c => c.send(`${m.id}: **${m.name}** (${m.severity}) until ${formatDateOut(m.release)}: ${m.reason}`))
+      msg.author.createDM().then(c => c.send(`${m.id}: **${m.name}** (${m.severity}) until ${formatDateOut(m.release)}: ${m.reason} - Reported by ${m.reporter}`))
     }
     else {
       msg.author.createDM().then(c => c.send(`**${m.name}** (${m.severity}): ${m.reason}`))

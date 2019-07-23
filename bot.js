@@ -106,6 +106,7 @@ function handleSendToVault(msg) {
       }
       
       row.lodestone = matches[2];
+      row.reporter = reaction.users.find(r => !r.bot).tag;
       
       if (row.reason) {
         msg.channel.send(`Alright, ${matches[1]} has been found guilty of ${row.reason}.`);

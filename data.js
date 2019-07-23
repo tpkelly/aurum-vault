@@ -3,7 +3,8 @@ const sql = new SQLite('./vault.sqlite');
 const ajax = require('./ajax.js');
 
 var migrations = [
-  "ALTER TABLE vault ADD COLUMN reason TEXT;"
+  "ALTER TABLE vault ADD COLUMN reason TEXT;",
+  "ALTER TABLE vault ADD COLUMN reporter TEXT;"
 ]
 
 var sqlCommands = {
@@ -36,10 +37,10 @@ function setup() {
     sql.prepare(`UPDATE version SET version = ${i+1}`).run();
   }
   
-  sqlCommands.vault.get = sql.prepare("SELECT lodestone_id, id, severity, reason, releaseDate FROM vault ORDER BY created DESC;");
-  sqlCommands.vault.getSeverity = sql.prepare("SELECT lodestone_id, severity, reason, releaseDate FROM vault WHERE severity = ?;");
+  sqlCommands.vault.get = sql.prepare("SELECT lodestone_id, id, severity, reason, releaseDate, reporter FROM vault ORDER BY created DESC;");
+  sqlCommands.vault.getSeverity = sql.prepare("SELECT lodestone_id, severity, reason, releaseDate, reporter FROM vault WHERE severity = ?;");
   sqlCommands.vault.getName = sql.prepare("select reason, severity, releaseDate, id FROM VAULT WHERE lodestone_id = ?");
-  sqlCommands.vault.add = sql.prepare("INSERT OR REPLACE INTO vault (lodestone_id, severity, reason, created, releaseDate) VALUES (@lodestone, @severity, @reason, date('now'), date('now', @releaseDays));");
+  sqlCommands.vault.add = sql.prepare("INSERT INTO vault (lodestone_id, severity, reason, created, releaseDate, reporter) VALUES (@lodestone, @severity, @reason, date('now'), date('now', @releaseDays), @reporter);");
   sqlCommands.vault.update = sql.prepare("UPDATE vault SET releaseDate = @date WHERE id = @id")
   sqlCommands.vault.purge = sql.prepare("DELETE FROM vault WHERE releaseDate < date('now');");
   sqlCommands.vault.remove = sql.prepare("DELETE FROM vault WHERE lodestone_id = ?");
@@ -118,7 +119,8 @@ function innerGet(profiles, callback) {
         server: data.server,
         freecompany: data.freecompany,
         release: profile.releaseDate,
-        reason: profile.reason
+        reason: profile.reason,
+        reporter: profile.reporter
       }
 
       callback(null, result);

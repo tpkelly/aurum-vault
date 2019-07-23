@@ -7,6 +7,12 @@ const msgConst = require('./messageConst.js');
 
 const client = new Discord.Client();
 
+const validServers = [
+  '460498131792953355', // Lich Server Congress
+  '589466032662642689', // Live Test Server
+  '587696100908073010', // Bot Test Server
+];
+
 const SendToVault = /Send (.*) \(#(\d+)\) to the Aurum Vault\?/
 const AurumPrefix = 'aurum,'
 
@@ -21,10 +27,14 @@ client.on('message', msg => {
     reactMyself(msg)
     return;
   }
-  
+
   var content = msg.content.toLowerCase();
   
   if (content.includes('/lodestone/character/')) {
+    if (!isAuthorised(msg)) { 
+      return;
+    }
+    
     var match = content.match(/\/lodestone\/character\/(\d+)/)
     let characterId = match[1]
     data.getId(characterId, function(data) {
@@ -38,8 +48,16 @@ client.on('message', msg => {
     });
   }
   else if (content.startsWith(AurumPrefix)) {
+    if (!isAuthorised(msg)) { 
+      return;
+    }
+    
     handleCommands(msg, content);
   } else if (content === 'help') {
+    if (!isAuthorised(msg)) { 
+      return;
+    }
+    
     command.help(msg)
   }
 });
@@ -126,6 +144,18 @@ function handleCommands(msg, content) {
   } else if (commands[0] === 'report') {
     command.report(client, msg, content.replace('aurum, report', ''));
   }
+}
+
+function isAuthorised(msg) {
+  if (msg.channel.type !== 'dm' && !validServers.includes(msg.channel.guild.id)) {
+    // Only run for authorised channels
+    msg.channel.send('This server is not authorised for Aurum Vault to run in. This instance has been reported.');
+    var alertUser = client.users.get(msgConst.alertUserId);
+    alertUser.createDM().then(c => c.send(`Unauthorised usage of Aurum Vault found in server: ${msg.channel.guild.name}`));
+    return false;
+  }
+  
+  return true;
 }
 
 client.login(auth.discord);

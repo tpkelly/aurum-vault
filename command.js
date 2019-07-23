@@ -32,7 +32,7 @@ function update(msg, options) {
   }
 
   // Which crime, if multiple
-  data.getName(`${options[0]} ${options[1]}`, function(err, results) {
+  data.getName(options.slice(0, 2), function(err, results) {
     if (err) {
       msg.channel.send(`"${options[0]} ${options[1]}"? This vagrant is not one of ours`);
       return;

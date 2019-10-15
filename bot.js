@@ -17,6 +17,7 @@ const SendToVault = /Send (.*) \(#(\d+)\) to the Aurum Vault\?/
 const AurumPrefix = 'aurum,'
 
 client.on('ready', () => {
+  client.user.setActivity("Try 'aurum, help'");
   data.setup();
   cron.run();
   console.log(`Logged in as ${client.user.tag}!`);

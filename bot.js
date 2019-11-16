@@ -41,6 +41,7 @@ client.on('message', msg => {
     data.getId(characterId, function(data) {
       msg.channel.send(`Send ${data.name} (#${characterId}) to the Aurum Vault?
   ${msgConst.gilReaction}: They stole from the company chest
+  ${msgConst.rmtReaction}: They engaged in Real Money Trading (RMT)
   ${msgConst.ingameHarassmentReaction}: They repeatedly harassed people in-game
   ${msgConst.hostileTakeoverReaction}: They attempted to take over the guild or destroy the guildhall.
   ${msgConst.extremeHarassmentReaction}: They led a long period of harassment both in-game and out-of-game.
@@ -75,6 +76,7 @@ function handleSendToVault(msg) {
   var matches = msg.content.match(SendToVault);
   var allReactions = [
     msgConst.gilReaction,
+    msgConst.rmtReaction,
     msgConst.ingameHarassmentReaction,
     msgConst.extremeHarassmentReaction,
     msgConst.hostileTakeoverReaction,
@@ -91,6 +93,8 @@ function handleSendToVault(msg) {
 
       if (reaction.emoji.name === msgConst.gilReaction) {
         row = { severity: 'minor', reason: 'stealing from the FC bank' }
+      } else if (reaction.emoji.name === msgConst.rmtReaction) {
+        row = { severity: 'moderate', reason: 'RMT activity' }
       } else if (reaction.emoji.name === msgConst.ingameHarassmentReaction) {
         row = { severity: 'minor', reason: 'in-game harassment' }
       } else if (reaction.emoji.name === msgConst.extremeHarassmentReaction) {
@@ -123,6 +127,7 @@ function handleSendToVault(msg) {
     });
   
   msg.react(msgConst.gilReaction)
+    .then(() => msg.react(msgConst.rmtReaction))
     .then(() => msg.react(msgConst.ingameHarassmentReaction))
     .then(() => msg.react(msgConst.extremeHarassmentReaction))
     .then(() => msg.react(msgConst.hostileTakeoverReaction))

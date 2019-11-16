@@ -1,5 +1,6 @@
 module.exports = {
   gilReaction: '💰',
+  rmtReaction: '💱',
   ingameHarassmentReaction: '💢',
   extremeHarassmentReaction: '🗯',
   hostileTakeoverReaction: '🏠',

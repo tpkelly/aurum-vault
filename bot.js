@@ -7,12 +7,6 @@ const msgConst = require('./messageConst.js');
 
 const client = new Discord.Client();
 
-const validServers = [
-  '460498131792953355', // Lich Server Congress
-  '589466032662642689', // Live Test Server
-  '587696100908073010', // Bot Test Server
-];
-
 const SendToVault = /Send (.*) \(#(\d+)\) to the Aurum Vault\?/
 const AurumPrefix = 'aurum,'
 
@@ -24,43 +18,36 @@ client.on('ready', () => {
 });
 
 client.on('message', msg => {
-  if (msg.author.id == client.user.id) {
-    reactMyself(msg)
-    return;
-  }
+  try {
+    if (msg.author.id == client.user.id) {
+      reactMyself(msg)
+      return;
+    }
 
-  var content = msg.content.toLowerCase();
-  
-  if (content.includes('/lodestone/character/')) {
-    if (!isAuthorised(msg)) { 
-      return;
-    }
+    var content = msg.content.toLowerCase();
     
-    var match = content.match(/\/lodestone\/character\/(\d+)/)
-    let characterId = match[1]
-    data.getId(characterId, function(data) {
-      msg.channel.send(`Send ${data.name} (#${characterId}) to the Aurum Vault?
-  ${msgConst.gilReaction}: They stole from the company chest
-  ${msgConst.rmtReaction}: They engaged in Real Money Trading (RMT)
-  ${msgConst.ingameHarassmentReaction}: They repeatedly harassed people in-game
-  ${msgConst.hostileTakeoverReaction}: They attempted to take over the guild or destroy the guildhall.
-  ${msgConst.extremeHarassmentReaction}: They led a long period of harassment both in-game and out-of-game.
-  ${msgConst.otherReasonReaction}: They offended in another way. This will be reviewed by an Admin or Moderator.
-  ${msgConst.cancelReaction}: A mistake has been made, this is no criminal!`)
-    });
+    if (content.includes('/lodestone/character/')) {
+      var match = content.match(/\/lodestone\/character\/(\d+)/)
+      let characterId = match[1]
+      data.getId(characterId, function(data) {
+        msg.channel.send(`Send ${data.name} (#${characterId}) to the Aurum Vault?
+    ${msgConst.gilReaction}: They stole from the company chest
+    ${msgConst.rmtReaction}: They engaged in Real Money Trading (RMT)
+    ${msgConst.ingameHarassmentReaction}: They repeatedly harassed people in-game
+    ${msgConst.hostileTakeoverReaction}: They attempted to take over the guild or destroy the guildhall.
+    ${msgConst.extremeHarassmentReaction}: They led a long period of harassment both in-game and out-of-game.
+    ${msgConst.otherReasonReaction}: They offended in another way. This will be reviewed by an Admin or Moderator.
+    ${msgConst.cancelReaction}: A mistake has been made, this is no criminal!`)
+      });
+    }
+    else if (content.startsWith(AurumPrefix)) {
+      handleCommands(msg, content);
+    } else if (content === 'help') {
+      command.help(msg)
+    }
   }
-  else if (content.startsWith(AurumPrefix)) {
-    if (!isAuthorised(msg)) { 
-      return;
-    }
-    
-    handleCommands(msg, content);
-  } else if (content === 'help') {
-    if (!isAuthorised(msg)) { 
-      return;
-    }
-    
-    command.help(msg)
+  catch (error) {
+    reportError(error);
   }
 });
 
@@ -153,16 +140,13 @@ function handleCommands(msg, content) {
   }
 }
 
-function isAuthorised(msg) {
-  if (msg.channel.type !== 'dm' && !validServers.includes(msg.channel.guild.id)) {
-    // Only run for authorised channels
-    msg.channel.send('This server is not authorised for Aurum Vault to run in. This instance has been reported.');
-    var alertUser = client.users.get(msgConst.alertUserId);
-    alertUser.createDM().then(c => c.send(`Unauthorised usage of Aurum Vault found in server: ${msg.channel.guild.name}`));
-    return false;
-  }
-  
-  return true;
+function reportError(error) {
+  var alertUser = client.users.get(msgConst.alertUserId);
+  alertUser.createDM()
+  .then(c => c.send(`Bot encountered an error:
+  ${error}`))
+  .catch(e => console.error('Failed to report error'));
+
 }
 
 client.login(auth.discord);

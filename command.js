@@ -117,8 +117,10 @@ function sendAlerts(client) {
   var allMembersForTag = new Map();
   // Form a map of FC tags to members on discord
   client.guilds.forEach(function(g) {
+    var guestRole = g.roles.find(r => r.name == "Guest")
+
     g.members
-    .filter(function(m){ return !!m.nickname })
+    .filter(function(m){ return !!m.nickname && !!m.hoistRole && (!guestRole || m.hoistRole.comparePositionTo(guestRole) > 0) })
     .forEach(function(m) {
       var guildTag = guildTagForNickname(m.nickname);
       if (!guildTag) {

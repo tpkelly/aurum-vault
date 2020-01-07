@@ -4,7 +4,8 @@ const ajax = require('./ajax.js');
 
 var migrations = [
   "ALTER TABLE vault ADD COLUMN reason TEXT;",
-  "ALTER TABLE vault ADD COLUMN reporter TEXT;"
+  "ALTER TABLE vault ADD COLUMN reporter TEXT;",
+  "ALTER TABLE lodestone_cache ADD COLUMN freecompanytag TEXT;"
 ]
 
 var sqlCommands = {
@@ -45,10 +46,10 @@ function setup() {
   sqlCommands.vault.purge = sql.prepare("DELETE FROM vault WHERE releaseDate < date('now');");
   sqlCommands.vault.remove = sql.prepare("DELETE FROM vault WHERE lodestone_id = ?");
 
-  sqlCommands.cache.all = sql.prepare("SELECT name, server, freecompany FROM lodestone_cache");
-  sqlCommands.cache.get = sql.prepare("SELECT name, server, freecompany FROM lodestone_cache WHERE lodestone_id = ?;");
+  sqlCommands.cache.all = sql.prepare("SELECT name, server, freecompany, freecompanytag FROM lodestone_cache");
+  sqlCommands.cache.get = sql.prepare("SELECT name, server, freecompany, freecompanytag FROM lodestone_cache WHERE lodestone_id = ?;");
   sqlCommands.cache.getName = sql.prepare("SELECT lodestone_id FROM lodestone_cache WHERE name LIKE ? || '% ' || ? ||'%';");
-  sqlCommands.cache.add = sql.prepare("INSERT INTO lodestone_cache (lodestone_id, name, server, freecompany, expiry) VALUES (@lodestone, @name, @server, @freecompany, date('now', '+1 day'));");
+  sqlCommands.cache.add = sql.prepare("INSERT INTO lodestone_cache (lodestone_id, name, server, freecompany, freecompanytag, expiry) VALUES (@lodestone, @name, @server, @freecompany, @freecompanytag, date('now', '+1 day'));");
   sqlCommands.cache.clear = sql.prepare("DELETE FROM lodestone_cache;");
   sqlCommands.cache.purge = sql.prepare("DELETE FROM lodestone_cache WHERE expiry < date('now');");
 }
@@ -120,12 +121,12 @@ function innerGet(profiles, callback, server) {
         name: data.name,
         server: data.server,
         freecompany: data.freecompany,
+        freecompanytag: data.freecompanytag,
         release: profile.releaseDate,
         reason: profile.reason,
         reporter: profile.reporter
       }
 
-      console.log(`${data.server} - ${server}`);
       if (!server || data.server.toLowerCase() == server) {
         profilesFound++;
         callback(null, result);
@@ -152,6 +153,7 @@ function getNameFromLodestone(key, callback) {
       
       if (data.FreeCompany) {
         results.freecompany = data.FreeCompany.Name
+        results.freecompanytag = data.FreeCompany.Tag
       }
 
       sqlCommands.cache.add.run(results);

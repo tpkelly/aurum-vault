@@ -8,7 +8,7 @@ const $ = require('jquery')(window)
 const auth = require('./auth.json');
 
 function nameFromLodestone(lodestoneId, successFunc) {
-  $.get(`https://xivapi.com/character/${lodestoneId}?private_key=${auth.xivapi}&data=FC&columns=FreeCompany.Name,Character.Name,Character.ID,Character.Server`, successFunc);
+  $.get(`https://xivapi.com/character/${lodestoneId}?private_key=${auth.xivapi}&data=FC&columns=FreeCompany.Name,FreeCompany.Tag,Character.Name,Character.ID,Character.Server`, successFunc);
 }
 
 module.exports = {

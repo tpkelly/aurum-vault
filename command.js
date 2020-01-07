@@ -113,6 +113,54 @@ function report(client, msg, report) {
   alertUser.createDM().then(c => c.send(`Bug report (${msg.author.tag}): ${report}`));
 }
 
+function sendAlerts(client) {
+  var allMembersForTag = new Map();
+  // Form a map of FC tags to members on discord
+  client.guilds.forEach(function(g) {
+    g.members
+    .filter(function(m){ return !!m.nickname })
+    .forEach(function(m) {
+      var guildTag = guildTagForNickname(m.nickname);
+      if (!guildTag) {
+        var alertUser = client.users.get(msgConst.alertUserId);
+        alertUser.createDM().then(c => c.send(`Could not identify guild tag for user '${m.nickname}'`));
+        return;
+      }
+      
+      if (!allMembersForTag.get(guildTag)) {
+        allMembersForTag.set(guildTag, []);
+      }
+      
+      allMembersForTag.get(guildTag).push(m.id);
+    });
+  });
+  
+  data.get(function(err, entry) {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    
+    if (!entry.freecompanytag || !allMembersForTag.get(entry.freecompanytag.toLowerCase())) {
+      return;
+    }
+    
+    var guildTagMembers = allMembersForTag.get(entry.freecompanytag.toLowerCase());
+    guildTagMembers.forEach(function(m) {
+      client.users.get(m).createDM().then(c => c.send(`A player convicted to the Aurum Vault has been spotted in your Free Company.\nKeep an eye out for '${entry.name}'. They were consigned for ${entry.reason}.`));
+    });
+  });
+}
+
+function guildTagForNickname(nickname) {
+  var guildTagRegex = /[\[<\(《«] ?([\w'.,:;!?&-]{1,5}) ?[\]>\)》»]/
+  if (!guildTagRegex.test(nickname)) {
+    return null
+  }
+  
+  return nickname.match(guildTagRegex)[1].toLowerCase()
+}
+
 function hasAdmin(msg) {
   if (msg.channel.type === 'dm') {
     return false;
@@ -139,5 +187,6 @@ module.exports = {
   clear : clear,
   release: release,
   update: update,
-  report: report
+  report: report,
+  sendAlerts: sendAlerts
 }

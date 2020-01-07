@@ -135,6 +135,7 @@ function sendAlerts(client) {
     });
   });
   
+  // Find out if we need to alert anybody
   data.get(function(err, entry) {
     if (err) {
       console.log(err);
@@ -145,10 +146,22 @@ function sendAlerts(client) {
       return;
     }
     
-    var guildTagMembers = allMembersForTag.get(entry.freecompanytag.toLowerCase());
-    guildTagMembers.forEach(function(m) {
-      client.users.get(m).createDM().then(c => c.send(`A player convicted to the Aurum Vault has been spotted in your Free Company.\nKeep an eye out for '${entry.name}'. They were consigned for ${entry.reason}.`));
+    var lowercaseTag = entry.freecompanytag.toLowerCase();
+    
+    data.lastAlert(entry.id, function(alertTag) {
+      if (alertTag == lowercaseTag) {
+        // Guild already aware, nothing to do
+        return;
+      }
+      
+      var guildTagMembers = allMembersForTag.get(lowercaseTag);
+      guildTagMembers.forEach(function(m) {
+        client.users.get(m).createDM().then(c => c.send(`A player convicted to the Aurum Vault has been spotted in your Free Company.\nKeep an eye out for '${entry.name}'. They were consigned for ${entry.reason}.`));
+      });
+
+      data.setAlert(entry.id, lowercaseTag);
     });
+    
   });
 }
 

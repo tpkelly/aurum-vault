@@ -11,13 +11,15 @@ var migrations = [
 var sqlCommands = {
   vault: {},
   cache: {},
-  version: {}
+  version: {},
+  alerts: {}
 }
 
 function setup() {
   sqlCommands.vault.exists = sql.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name = 'vault';")
   sqlCommands.cache.exists = sql.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name = 'lodestone_cache';")
   sqlCommands.version.exists = sql.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name = 'version';")
+  sqlCommands.alerts.exists = sql.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name = 'alerts';")
 
   if (!sqlCommands.version.exists.get()['count(*)']) {
     sql.prepare("CREATE TABLE version(version INTEGER)").run();
@@ -28,6 +30,9 @@ function setup() {
   }
   if (!sqlCommands.cache.exists.get()['count(*)']) {
     sql.prepare("CREATE TABLE lodestone_cache (lodestone_id INTEGER PRIMARY KEY, name TEXT, server TEXT, freecompany TEXT, expiry DATETIME)").run();
+  }
+  if (!sqlCommands.alerts.exists.get()['count(*)']) {
+    sql.prepare("CREATE TABLE alerts (lodestone_id INTEGER PRIMARY KEY, freecompanytag TEXT)").run();
   }
   
   // Apply migrations
@@ -52,6 +57,10 @@ function setup() {
   sqlCommands.cache.add = sql.prepare("INSERT INTO lodestone_cache (lodestone_id, name, server, freecompany, freecompanytag, expiry) VALUES (@lodestone, @name, @server, @freecompany, @freecompanytag, date('now', '+1 day'));");
   sqlCommands.cache.clear = sql.prepare("DELETE FROM lodestone_cache;");
   sqlCommands.cache.purge = sql.prepare("DELETE FROM lodestone_cache WHERE expiry < date('now');");
+  
+  sqlCommands.alerts.lastAlertForId = sql.prepare("SELECT freecompanytag FROM alerts WHERE lodestone_id = ?;");
+  sqlCommands.alerts.setAlertForId = sql.prepare("REPLACE INTO alerts(lodestone_id, freecompanytag) VALUES(@lodestone, @freecompanytag);");
+  sqlCommands.alerts.purge = sql.prepare("DELETE FROM alerts");
 }
 
 function save(data) {
@@ -68,11 +77,14 @@ function save(data) {
   sqlCommands.vault.add.run(data)
 }
 
+// Reset things back to zero
 function clear() {
   console.log('Cache cleared')
   sqlCommands.cache.clear.run()
+  sqlCommands.alerts.purge.run()
 }
 
+// Clean out old data
 function purge() {
   sqlCommands.cache.purge.run()
   sqlCommands.vault.purge.run()
@@ -203,6 +215,20 @@ function update(id, date, callback) {
   }
 }
 
+function lastAlert(id, callback) {
+  var results = sqlCommands.alerts.lastAlertForId.all(id);
+  if (results.length == 0) {
+    callback();
+    return;
+  }
+  
+  callback(results[0].freecompanytag);
+}
+
+function setAlert(id, tag) {
+  sqlCommands.alerts.setAlertForId.run({ lodestone: id, freecompanytag: tag });
+}
+
 module.exports = {
   setup: setup,
   save: save,
@@ -214,7 +240,9 @@ module.exports = {
   purge: purge,
   clear: clear,
   remove: remove,
-  update: update
+  update: update,
+  lastAlert: lastAlert,
+  setAlert: setAlert
 }
 
 Date.prototype.addDays = function(days) {

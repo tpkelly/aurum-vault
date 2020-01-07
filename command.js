@@ -7,16 +7,20 @@ function list(msg, options) {
       msg.author.createDM().then(c => c.send(err));
     }
     else if (hasAdmin(msg)) {
-      msg.author.createDM().then(c => c.send(`${m.id}: **${m.name}** (${m.severity}) until ${formatDateOut(m.release)}: ${m.reason} - Reported by ${m.reporter}`))
+      msg.author.createDM().then(c => c.send(`${m.id}: **${m.name}** (${m.severity}) [${m.server}] until ${formatDateOut(m.release)}: ${m.reason} - Reported by ${m.reporter}`))
     }
     else {
-      msg.author.createDM().then(c => c.send(`**${m.name}** (${m.severity}): ${m.reason}`))
+      msg.author.createDM().then(c => c.send(`**${m.name}** (${m.severity}) [${m.server}]: ${m.reason}`))
     }
   };
+  
+  var severityLevels = ['major', 'moderate', 'minor', 'review'];
   if (options.length == 0 || options[0] == 'all') {
     data.get(listCommand);
-  } else {
+  } else if (severityLevels.indexOf(options[0]) !== -1) {
     data.getSeverity(options[0], listCommand);
+  } else {
+    data.getServer(options[0], listCommand);
   }
 }
 
@@ -83,7 +87,7 @@ function help(msg) {
   \n=== Commands === \
   \n**help**\
   \nDisplay this help message. \
-  \n\n**list** [all|major|moderate|minor] \
+  \n\n**list** [all|major|moderate|minor|<server>] \
   \nList all criminals serving time in the Vault, with an optional filter on the severity of their crimes. \
   \n\n**report** <bug report> \
   \nReport a bug with the bot to the creator. \

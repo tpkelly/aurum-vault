@@ -87,6 +87,11 @@ function getSeverity(severity, callback) {
   innerGet(profiles, callback)
 }
 
+function getServer(server, callback) {
+  var profiles = sqlCommands.vault.get.all();
+  innerGet(profiles, callback, server)
+}
+
 function getName(nameComponents, callback) {
   getIdFromVault(nameComponents, function(err, id) {
     if (err) {
@@ -104,11 +109,8 @@ function getName(nameComponents, callback) {
   });
 }
 
-function innerGet(profiles, callback) {
-  if (profiles.length === 0) {
-    callback('No entries in the Vault.')
-    return;
-  }
+function innerGet(profiles, callback, server) {
+  var profilesFound = 0;
   profiles.forEach(function(profile) {
     getNameFromLodestone(profile.lodestone_id, function(data) {
       var result = {
@@ -123,9 +125,19 @@ function innerGet(profiles, callback) {
         reporter: profile.reporter
       }
 
-      callback(null, result);
+      console.log(`${data.server} - ${server}`);
+      if (!server || data.server.toLowerCase() == server) {
+        profilesFound++;
+        callback(null, result);
+      }
     });
   });
+  
+  if (profilesFound === 0) {
+    callback('No entries in the Vault.')
+    return;
+  }
+
 }
 
 function getNameFromLodestone(key, callback) {
@@ -194,6 +206,7 @@ module.exports = {
   save: save,
   get: get,
   getSeverity: getSeverity,
+  getServer: getServer,
   getName: getName,
   getId: getNameFromLodestone,
   purge: purge,
